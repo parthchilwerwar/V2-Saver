@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "V2 Saver",
+    "version": "1.0.0",
+    "description": "Save videos, articles, and more for later viewing.",
+    "permissions": ["activeTab", "storage"],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "16": "V2.png", 
+        "32": "V2.png", 
+        "48": "V2.png", 
+        "128": "V2.png"  
+    }
+}

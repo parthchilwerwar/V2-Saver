@@ -1,0 +1,101 @@
+@font-face {
+    font-family: main;
+    src: url(fonts/GothamMedium.ttf);
+}
+
+
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #FFFFF0;
+    
+  }
+  
+  .container {
+    width: 400px;
+    margin: 0 auto;
+    background-color: #FFFFF0;
+    padding: 20px;
+    
+    
+    color: #CC5500;
+  }
+  
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #CC5500;
+    font-family: main;
+  }
+
+
+  h3{
+    text-align: center;
+    margin-bottom: 20px;
+    color: #CC5500;
+    font-size: 23px;
+    font-family: main;
+  }
+  
+  input[type="text"], input[type="url"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #CC5500;
+    border-radius: 10px;
+    box-sizing: border-box;
+    font-family: main;
+    
+  } 
+  
+  .buttons {
+    margin-bottom: 20px;
+    text-align: center; 
+  }
+  
+  button{
+    background-color: #CC5500;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 5px;
+    transition: 0.4s;
+    font-family: main;
+  }
+  
+  button:hover {
+    opacity: 0.9;
+    box-shadow: 7px 5px 56px -14px #CC5500;
+  }
+
+  #botton:active {
+    transform: scale(0.97);
+    box-shadow: 7px 5px 56px -10px #CC5500;
+   }
+
+#savedList{
+    font-size: 17px;
+    color:#E2725B;
+   
+    margin-top: 40px;
+    font-family: main;
+    font-weight: 550;
+}
+
+a{
+    
+    color: #E2725B;
+    text-decoration: none;
+    font-family: main;
+}
+
+a:hover{
+    color: #E2725B;
+    text-decoration: underline;
+}
+
+
