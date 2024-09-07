@@ -1,0 +1,181 @@
+@font-face {
+  font-family: main;
+  src: url(fonts/GothamMedium.ttf);
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #FFFFF0;
+}
+
+.container {
+  width: 400px;
+  margin: 0 auto;
+  background-color: #FFFFF0;
+  padding: 20px;
+  color: #CC5500;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #CC5500;
+  font-family: main;
+}
+
+h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #CC5500;
+  font-size: 23px;
+  font-family: main;
+}
+
+input[type="text"], input[type="url"], select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #CC5500;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-family: main;
+}
+
+.buttons {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+button, .import-label {
+  background-color: #CC5500;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 5px;
+  transition: 0.4s;
+  font-family: main;
+  display: inline-block;
+}
+
+button:hover, .import-label:hover {
+  opacity: 0.9;
+  box-shadow: 7px 5px 56px -14px #CC5500;
+}
+
+button:active, .import-label:active {
+  transform: scale(0.97);
+  box-shadow: 7px 5px 56px -10px #CC5500;
+}
+
+#savedList {
+  font-size: 17px;
+  color: #E2725B;
+  margin-top: 40px;
+  font-family: main;
+  font-weight: 550;
+  padding: 0;
+  list-style-type: none;
+}
+
+#savedList li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #FFFFF0;
+  border: 1px solid #CC5500;
+  border-radius: 5px;
+  cursor: default; /* Keep the default cursor for normal state */
+}
+
+#savedList li:hover {
+  background-color: #FFF5E6;
+}
+
+/* Change cursor only when dragging */
+#savedList li.sortable-chosen {
+  cursor: move; /* Change to move cursor when item is being dragged */
+}
+
+/* Optional: You can add a visual indicator for the drag operation */
+#savedList li.sortable-ghost {
+  opacity: 0.5;
+  background-color: #E2725B;
+}
+
+a {
+  color: #E2725B;
+  text-decoration: none;
+  font-family: main;
+}
+
+a:hover {
+  color: #E2725B;
+  text-decoration: underline;
+}
+
+.delete-button {
+  background-color: transparent;
+  border: none;
+  color: #CC5500;
+  cursor: pointer;
+  font-size: 18px; 
+  margin-left: 10px; 
+  transition: 0.3s;
+  padding: 0;
+}
+
+.delete-button:hover {
+  background-color: transparent;
+  color: #E2725B;
+}
+
+.tags {
+  font-size: 0.8em;
+  color: #E2725B;
+  margin-left: 5px;
+}
+
+#sortSelect {
+  margin-bottom: 20px;
+}
+
+.search-container {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+#searchInput {
+  flex-grow: 1;
+  margin-right: 10px;
+  margin-bottom: 0;
+}
+
+#searchButton {
+  flex-shrink: 0;
+}
+
+.edit-button {
+  background-color: transparent;
+  border: none;
+  color: #CC5500;
+  cursor: pointer;
+  font-size: 18px; 
+  margin-right: 5px;
+  transition: 0.3s;
+  padding: 0;
+}
+
+.edit-button:hover {
+  color: #E2725B;
+}
+
+.drag-handle {
+  cursor: move;
+  padding-right: 5px;
+  color: #CC5500;
+}
