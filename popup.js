@@ -16,7 +16,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         let savedItems = data.savedItems || [];
         let editIndex = document.getElementById('saveButton').dataset.editIndex;
         
-        // Check for duplicates
+       
         let isDuplicate = savedItems.some(item => item.title === itemTitle && item.url === itemURL);
         
         if (isDuplicate && editIndex === undefined) {
@@ -32,12 +32,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         };
         
         if (editIndex !== undefined) {
-          // Update existing item
+          
           savedItems[editIndex] = newItem;
           document.getElementById('saveButton').textContent = 'Save';
           document.getElementById('saveButton').dataset.editIndex = undefined;
         } else {
-          // Add new item
+          
           savedItems.push(newItem);
         }
 
@@ -179,7 +179,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
             (item.tags && item.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
           );
           if (filteredItems.length > 0) {
-            displaySavedList([filteredItems[0]]); // Display only the top result
+            displaySavedList([filteredItems[0]]); 
           } else {
             alert('No matching items found.');
           }
@@ -229,7 +229,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       reader.readAsText(file);
     });
   
-    // Auto-fill current page info
+    
     document.getElementById('itemTitle').value = currentTitle;
     document.getElementById('itemURL').value = currentURL;
 });
