@@ -109,7 +109,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           savedList.appendChild(listItem);
         });
 
-        // Initialize Sortable
+        
         if (savedList.sortable) {
           savedList.sortable.destroy();
         }
