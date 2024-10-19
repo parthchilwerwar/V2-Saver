@@ -5,5 +5,5 @@ With V2 Saver, you can easily save any link you come across with a single click.
 
 Here's what V2 Saver can do for you:
 
--Save links quickly and easily, without the clutter of bookmarks. <br>
--Organize your saved links with clear titles and URLs for easy re
+- Save links quickly and easily, without the clutter of bookmarks. <br>
+- Organize your saved links with clear titles and URLs for easy re
