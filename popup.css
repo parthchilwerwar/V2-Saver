@@ -84,27 +84,101 @@ button:active, .import-label:active {
 #savedList li {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 15px;
   background-color: #FFFFF0;
   border: 1px solid #CC5500;
-  border-radius: 5px;
-  cursor: default; /* Keep the default cursor for normal state */
+  border-radius: 8px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(204, 85, 0, 0.1);
 }
 
 #savedList li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(204, 85, 0, 0.15);
+}
+
+#savedList li.dragging {
+  opacity: 0.8;
   background-color: #FFF5E6;
+  border: 2px dashed #CC5500;
+  box-shadow: 0 8px 16px rgba(204, 85, 0, 0.2);
+  transform: scale(1.02);
+  z-index: 1000;
 }
 
-/* Change cursor only when dragging */
-#savedList li.sortable-chosen {
-  cursor: move; /* Change to move cursor when item is being dragged */
+#savedList li.drag-over {
+  transform: translateY(5px);
+  border-top: 2px solid #CC5500;
+  padding-top: 20px;
+  margin-top: 5px;
 }
 
-/* Optional: You can add a visual indicator for the drag operation */
-#savedList li.sortable-ghost {
-  opacity: 0.5;
-  background-color: #E2725B;
+.item-content {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+#savedList li:hover .item-actions {
+  opacity: 1;
+}
+
+/* Animation for dropping items */
+@keyframes dropAnimation {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+#savedList li.dropped {
+  animation: dropAnimation 0.3s ease forwards;
+}
+
+/* Placeholder style while dragging */
+#savedList li.placeholder {
+  background-color: #FFF5E6;
+  border: 2px dashed #CC5500;
+  opacity: 0.4;
+}
+
+/* Smooth transitions for all interactions */
+#savedList li * {
+  transition: all 0.2s ease;
+}
+
+/* Enhanced focus states for accessibility */
+#savedList li:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(204, 85, 0, 0.3);
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  #savedList li {
+    padding: 12px;
+  }
+  
+  .item-actions {
+    gap: 8px;
+  }
 }
 
 a {
@@ -172,10 +246,4 @@ a:hover {
 
 .edit-button:hover {
   color: #E2725B;
-}
-
-.drag-handle {
-  cursor: move;
-  padding-right: 5px;
-  color: #CC5500;
 }

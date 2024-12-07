@@ -59,77 +59,139 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         let emptyMessage = document.createElement('p');
         emptyMessage.textContent = 'Nothing saved yet :)';
         savedList.appendChild(emptyMessage);
-      } else {
-        savedItems.forEach(function (item, index) {
-          let listItem = document.createElement('li');
-          listItem.dataset.index = index;
-          
-          let link = document.createElement('a');
-          link.href = item.url;
-          link.textContent = item.title;
-          link.target = "_blank";
+        return;
+      }
 
-          let tagSpan = document.createElement('span');
-          tagSpan.textContent = item.tags ? item.tags.join(', ') : '';
-          tagSpan.classList.add('tags');
-
-          let deleteButton = document.createElement('button');
-          deleteButton.classList.add('delete-button'); 
-          deleteButton.innerHTML = '<i class="ri-delete-bin-6-line"></i>'; 
-          
-          let editButton = document.createElement('button');
-          editButton.classList.add('edit-button');
-          editButton.innerHTML = '<i class="ri-edit-line"></i>';
-          
-          deleteButton.addEventListener('click', function (e) {
-            e.stopPropagation();
-            chrome.storage.local.get('savedItems', function(data) {
-              let savedItems = data.savedItems || [];
-              savedItems.splice(index, 1); 
-              chrome.storage.local.set({ 'savedItems': savedItems }, function () {
-                console.log('Item deleted.');
-                displaySavedList(savedItems); 
-              });
+      savedItems.forEach((item, index) => {
+        let listItem = document.createElement('li');
+        listItem.draggable = true;
+        listItem.dataset.index = index;
+        
+        // Content container
+        let contentDiv = document.createElement('div');
+        contentDiv.className = 'item-content';
+        
+        let link = document.createElement('a');
+        link.href = item.url;
+        link.textContent = item.title;
+        link.target = "_blank";
+        
+        let tagSpan = document.createElement('span');
+        tagSpan.textContent = item.tags ? item.tags.join(', ') : '';
+        tagSpan.classList.add('tags');
+        
+        contentDiv.appendChild(link);
+        contentDiv.appendChild(tagSpan);
+        
+        // Actions container
+        let actionsDiv = document.createElement('div');
+        actionsDiv.className = 'item-actions';
+        
+        let editButton = document.createElement('button');
+        editButton.classList.add('edit-button');
+        editButton.innerHTML = '<i class="ri-edit-line"></i>';
+        
+        let deleteButton = document.createElement('button');
+        deleteButton.classList.add('delete-button');
+        deleteButton.innerHTML = '<i class="ri-delete-bin-6-line"></i>';
+        
+        // Add drag events
+        listItem.addEventListener('dragstart', handleDragStart);
+        listItem.addEventListener('dragend', handleDragEnd);
+        listItem.addEventListener('dragover', handleDragOver);
+        listItem.addEventListener('drop', handleDrop);
+        listItem.addEventListener('dragenter', handleDragEnter);
+        listItem.addEventListener('dragleave', handleDragLeave);
+        
+        // Add button event listeners
+        deleteButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          chrome.storage.local.get('savedItems', function(data) {
+            let items = data.savedItems || [];
+            items.splice(index, 1);
+            chrome.storage.local.set({ 'savedItems': items }, () => {
+              displaySavedList(items);
             });
           });
-
-          editButton.addEventListener('click', function (e) {
-            e.stopPropagation();
-            document.getElementById('itemTitle').value = item.title;
-            document.getElementById('itemURL').value = item.url;
-            document.getElementById('itemTags').value = item.tags ? item.tags.join(', ') : '';
-            document.getElementById('saveButton').textContent = 'Update';
-            document.getElementById('saveButton').dataset.editIndex = index;
-          });
-
-          listItem.appendChild(link);
-          listItem.appendChild(tagSpan);
-          listItem.appendChild(editButton);
-          listItem.appendChild(deleteButton);
-          savedList.appendChild(listItem);
         });
 
+        editButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.getElementById('itemTitle').value = item.title;
+          document.getElementById('itemURL').value = item.url;
+          document.getElementById('itemTags').value = item.tags ? item.tags.join(', ') : '';
+          document.getElementById('saveButton').textContent = 'Update';
+          document.getElementById('saveButton').dataset.editIndex = index;
+        });
         
-        if (savedList.sortable) {
-          savedList.sortable.destroy();
-        }
-        savedList.sortable = new Sortable(savedList, {
-          animation: 150,
-          onEnd: function (evt) {
-            let oldIndex = evt.oldIndex;
-            let newIndex = evt.newIndex;
-            chrome.storage.local.get('savedItems', function(data) {
-              let savedItems = data.savedItems || [];
-              let [reorderedItem] = savedItems.splice(oldIndex, 1);
-              savedItems.splice(newIndex, 0, reorderedItem);
-              chrome.storage.local.set({ 'savedItems': savedItems }, function () {
-                console.log('Items reordered.');
-                displaySavedList(savedItems);
-              });
-            });
-          }
+        actionsDiv.appendChild(editButton);
+        actionsDiv.appendChild(deleteButton);
+        
+        listItem.appendChild(contentDiv);
+        listItem.appendChild(actionsDiv);
+        savedList.appendChild(listItem);
+      });
+    }
+  
+    // Drag and Drop handlers
+    let draggedItem = null;
+
+    function handleDragStart(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.dataset.index);
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      let items = document.querySelectorAll('#savedList li');
+      items.forEach(item => item.classList.remove('drag-over'));
+    }
+
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDragEnter(e) {
+      this.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      if (draggedItem !== this) {
+        const fromIndex = parseInt(draggedItem.dataset.index);
+        const toIndex = parseInt(this.dataset.index);
+        
+        chrome.storage.local.get('savedItems', function(data) {
+          let items = data.savedItems || [];
+          const [movedItem] = items.splice(fromIndex, 1);
+          items.splice(toIndex, 0, movedItem);
+          
+          chrome.storage.local.set({ 'savedItems': items }, function() {
+            displaySavedList(items);
+            const droppedItem = document.querySelector(`[data-index="${toIndex}"]`);
+            if (droppedItem) {
+              droppedItem.classList.add('dropped');
+              setTimeout(() => {
+                droppedItem.classList.remove('dropped');
+              }, 300);
+            }
+          });
         });
       }
+      
+      return false;
     }
   
     function filterItems(query) {
