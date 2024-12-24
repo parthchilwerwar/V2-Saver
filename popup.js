@@ -28,7 +28,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         let newItem = { 
           url: itemURL, 
           title: itemTitle, 
-          tags: itemTags
+          tags: itemTags,
+          pinned: false
         };
         
         if (editIndex !== undefined) {
@@ -62,10 +63,20 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         return;
       }
 
+      // Sort items to show pinned items first
+      savedItems.sort((a, b) => {
+        if (a.pinned === b.pinned) return 0;
+        return a.pinned ? -1 : 1;
+      });
+
       savedItems.forEach((item, index) => {
         let listItem = document.createElement('li');
         listItem.draggable = true;
         listItem.dataset.index = index;
+        
+        if (item.pinned) {
+          listItem.classList.add('pinned');
+        }
         
         // Content container
         let contentDiv = document.createElement('div');
@@ -86,6 +97,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         // Actions container
         let actionsDiv = document.createElement('div');
         actionsDiv.className = 'item-actions';
+        
+        let pinButton = document.createElement('button');
+        pinButton.classList.add('pin-button');
+        pinButton.innerHTML = `<i class="ri-pushpin-${item.pinned ? 'fill' : 'line'}"></i>`;
         
         let editButton = document.createElement('button');
         editButton.classList.add('edit-button');
@@ -124,6 +139,26 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           document.getElementById('saveButton').dataset.editIndex = index;
         });
         
+        pinButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          chrome.storage.local.get('savedItems', function(data) {
+            let items = data.savedItems || [];
+            // Find the item by matching title and URL to ensure we update the correct item
+            const itemIndex = items.findIndex(i => 
+              i.title === item.title && 
+              i.url === item.url
+            );
+            
+            if (itemIndex !== -1) {
+              items[itemIndex].pinned = !items[itemIndex].pinned;
+              chrome.storage.local.set({ 'savedItems': items }, () => {
+                displaySavedList(items);
+              });
+            }
+          });
+        });
+
+        actionsDiv.appendChild(pinButton);
         actionsDiv.appendChild(editButton);
         actionsDiv.appendChild(deleteButton);
         
@@ -150,9 +185,19 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     }
 
     function handleDragOver(e) {
-      if (e.preventDefault) {
-        e.preventDefault();
+      e.preventDefault();
+      const rect = this.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      
+      // Remove existing drag-over classes
+      this.classList.remove('drag-over-top', 'drag-over-bottom');
+      
+      if (e.clientY < midY) {
+        this.classList.add('drag-over-top');
+      } else {
+        this.classList.add('drag-over-bottom');
       }
+      
       e.dataTransfer.dropEffect = 'move';
       return false;
     }
@@ -162,7 +207,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     }
 
     function handleDragLeave(e) {
-      this.classList.remove('drag-over');
+      this.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
     }
 
     function handleDrop(e) {
@@ -172,25 +217,32 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (draggedItem !== this) {
         const fromIndex = parseInt(draggedItem.dataset.index);
         const toIndex = parseInt(this.dataset.index);
+        const rect = this.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
         
         chrome.storage.local.get('savedItems', function(data) {
           let items = data.savedItems || [];
           const [movedItem] = items.splice(fromIndex, 1);
-          items.splice(toIndex, 0, movedItem);
+          
+          // Insert above or below based on drop position
+          const adjustedIndex = e.clientY < midY ? toIndex : toIndex + 1;
+          items.splice(adjustedIndex, 0, movedItem);
           
           chrome.storage.local.set({ 'savedItems': items }, function() {
             displaySavedList(items);
-            const droppedItem = document.querySelector(`[data-index="${toIndex}"]`);
+            const droppedItem = document.querySelector(`[data-index="${adjustedIndex}"]`);
             if (droppedItem) {
               droppedItem.classList.add('dropped');
               setTimeout(() => {
                 droppedItem.classList.remove('dropped');
-              }, 300);
+              }, 400);
             }
           });
         });
       }
       
+      // Clean up
+      this.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
       return false;
     }
   

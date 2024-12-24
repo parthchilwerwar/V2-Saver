@@ -10,6 +10,7 @@ body {
   background-color: #FFFFF0;
 }
 
+
 .container {
   width: 400px;
   margin: 0 auto;
@@ -84,16 +85,14 @@ button:active, .import-label:active {
 #savedList li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding: 15px;
+  padding: 12px 15px;
+  margin-bottom: 12px;
   background-color: #FFFFF0;
   border: 1px solid #CC5500;
   border-radius: 8px;
+  transition: all 0.3s ease;
   cursor: grab;
-  user-select: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(204, 85, 0, 0.1);
+  transform-origin: center;
 }
 
 #savedList li:hover {
@@ -102,69 +101,144 @@ button:active, .import-label:active {
 }
 
 #savedList li.dragging {
-  opacity: 0.8;
+  opacity: 0.9;
   background-color: #FFF5E6;
   border: 2px dashed #CC5500;
-  box-shadow: 0 8px 16px rgba(204, 85, 0, 0.2);
-  transform: scale(1.02);
+  box-shadow: 0 12px 20px rgba(204, 85, 0, 0.2);
+  transform: scale(1.02) rotate(1deg);
   z-index: 1000;
+  cursor: grabbing;
+  animation: dragShake 0.8s ease-in-out infinite;
+}
+
+@keyframes dragShake {
+  0% {
+    transform: scale(1.02) rotate(1deg);
+  }
+  50% {
+    transform: scale(1.02) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1.02) rotate(1deg);
+  }
 }
 
 #savedList li.drag-over {
-  transform: translateY(5px);
-  border-top: 2px solid #CC5500;
-  padding-top: 20px;
-  margin-top: 5px;
+  transform: scale(1.02);
+  transition: transform 0.2s ease-in-out;
 }
 
-.item-content {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  gap: 15px;
+#savedList li.drag-over::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #CC5500;
+  border-radius: 3px;
+  animation: insertIndicator 0.3s ease-in-out;
 }
 
-.item-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-#savedList li:hover .item-actions {
-  opacity: 1;
-}
-
-/* Animation for dropping items */
-@keyframes dropAnimation {
-  0% {
-    transform: translateY(-10px);
-    opacity: 0.5;
+@keyframes insertIndicator {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
   }
-  100% {
-    transform: translateY(0);
+  to {
+    transform: scaleX(1);
     opacity: 1;
   }
 }
 
 #savedList li.dropped {
-  animation: dropAnimation 0.3s ease forwards;
+  animation: dropBounce 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* Placeholder style while dragging */
+@keyframes dropBounce {
+  0% {
+    transform: translateY(-20px) scale(1.02);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(5px) scale(1);
+  }
+  75% {
+    transform: translateY(-3px) scale(1);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+
+#savedList li.drag-path::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent,
+    rgba(204, 85, 0, 0.2),
+    rgba(204, 85, 0, 0.5),
+    rgba(204, 85, 0, 0.2),
+    transparent
+  );
+  animation: pathPulse 1s ease-in-out infinite;
+}
+
+@keyframes pathPulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* Hover state for drop zones */
+#savedList li.drag-over-top::before {
+  top: -2px;
+  animation: glowTop 1s ease-in-out infinite;
+}
+
+#savedList li.drag-over-bottom::before {
+  bottom: -2px;
+  animation: glowBottom 1s ease-in-out infinite;
+}
+
+@keyframes glowTop {
+  0%, 100% {
+    box-shadow: 0 -2px 8px rgba(204, 85, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 -2px 12px rgba(204, 85, 0, 0.5);
+  }
+}
+
+@keyframes glowBottom {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(204, 85, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(204, 85, 0, 0.5);
+  }
+}
+
 #savedList li.placeholder {
   background-color: #FFF5E6;
   border: 2px dashed #CC5500;
   opacity: 0.4;
 }
 
-/* Smooth transitions for all interactions */
 #savedList li * {
   transition: all 0.2s ease;
 }
 
-/* Enhanced focus states for accessibility */
 #savedList li:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(204, 85, 0, 0.3);
@@ -172,12 +246,15 @@ button:active, .import-label:active {
 
 /* Mobile optimization */
 @media (max-width: 768px) {
-  #savedList li {
-    padding: 12px;
+  .item-actions {
+    gap: 2px;
   }
   
-  .item-actions {
-    gap: 8px;
+  .pin-button,
+  .edit-button,
+  .delete-button {
+    width: 24px;
+    height: 24px;
   }
 }
 
@@ -193,19 +270,29 @@ a:hover {
 }
 
 .delete-button {
-  background-color: transparent;
+  background: none;
   border: none;
-  color: #CC5500;
   cursor: pointer;
-  font-size: 18px; 
-  margin-left: 10px; 
-  transition: 0.3s;
-  padding: 0;
+  padding: 6px;
+  color: #CC5500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
 }
 
 .delete-button:hover {
-  background-color: transparent;
+  background-color: rgba(204, 85, 0, 0.1);
   color: #E2725B;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.delete-button i {
+  font-size: 16px;
 }
 
 .tags {
@@ -234,16 +321,92 @@ a:hover {
 }
 
 .edit-button {
-  background-color: transparent;
+  background: none;
   border: none;
-  color: #CC5500;
   cursor: pointer;
-  font-size: 18px; 
-  margin-right: 5px;
-  transition: 0.3s;
-  padding: 0;
+  padding: 6px;
+  color: #CC5500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
 }
 
 .edit-button:hover {
+  background-color: rgba(204, 85, 0, 0.1);
   color: #E2725B;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.edit-button i {
+  font-size: 16px;
+}
+
+.pinned {
+  background-color: #FFF5E6 !important;
+  border-left: 3px solid #CC5500 !important;
+}
+
+.pin-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  color: #CC5500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.pin-button:hover {
+  background-color: rgba(204, 85, 0, 0.1);
+  color: #E2725B;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.pin-button i {
+  font-size: 16px;
+}
+
+
+.item-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 15px;
+}
+
+.item-content a {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.item-content .tags {
+  font-size: 12px;
+  color: #E2725B;
+  opacity: 0.8;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+
+.pin-button,
+.edit-button,
+.delete-button {
+  cursor: pointer !important;
 }
