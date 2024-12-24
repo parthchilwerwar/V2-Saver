@@ -63,7 +63,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         return;
       }
 
-      // Sort items to show pinned items first
+      
       savedItems.sort((a, b) => {
         if (a.pinned === b.pinned) return 0;
         return a.pinned ? -1 : 1;
@@ -78,7 +78,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           listItem.classList.add('pinned');
         }
         
-        // Content container
+        
         let contentDiv = document.createElement('div');
         contentDiv.className = 'item-content';
         
@@ -94,7 +94,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         contentDiv.appendChild(link);
         contentDiv.appendChild(tagSpan);
         
-        // Actions container
+        
         let actionsDiv = document.createElement('div');
         actionsDiv.className = 'item-actions';
         
@@ -110,7 +110,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         deleteButton.classList.add('delete-button');
         deleteButton.innerHTML = '<i class="ri-delete-bin-6-line"></i>';
         
-        // Add drag events
+        
         listItem.addEventListener('dragstart', handleDragStart);
         listItem.addEventListener('dragend', handleDragEnd);
         listItem.addEventListener('dragover', handleDragOver);
@@ -118,7 +118,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         listItem.addEventListener('dragenter', handleDragEnter);
         listItem.addEventListener('dragleave', handleDragLeave);
         
-        // Add button event listeners
+       
         deleteButton.addEventListener('click', (e) => {
           e.stopPropagation();
           chrome.storage.local.get('savedItems', function(data) {
@@ -143,7 +143,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           e.stopPropagation();
           chrome.storage.local.get('savedItems', function(data) {
             let items = data.savedItems || [];
-            // Find the item by matching title and URL to ensure we update the correct item
+        
             const itemIndex = items.findIndex(i => 
               i.title === item.title && 
               i.url === item.url
@@ -168,7 +168,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       });
     }
   
-    // Drag and Drop handlers
     let draggedItem = null;
 
     function handleDragStart(e) {
@@ -189,7 +188,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const rect = this.getBoundingClientRect();
       const midY = rect.top + rect.height / 2;
       
-      // Remove existing drag-over classes
       this.classList.remove('drag-over-top', 'drag-over-bottom');
       
       if (e.clientY < midY) {
@@ -224,7 +222,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           let items = data.savedItems || [];
           const [movedItem] = items.splice(fromIndex, 1);
           
-          // Insert above or below based on drop position
           const adjustedIndex = e.clientY < midY ? toIndex : toIndex + 1;
           items.splice(adjustedIndex, 0, movedItem);
           
@@ -241,7 +238,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         });
       }
       
-      // Clean up
       this.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
       return false;
     }
@@ -276,8 +272,9 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     document.getElementById('clearAllButton').addEventListener('click', function() {
       if (confirm('Are you sure you want to clear all saved items?')) {
         chrome.storage.local.set({'savedItems': []}, function() {
-          console.log('Saved list has been cleared :) ');
+          console.log('Saved list has been cleared :)');
           displaySavedList([]);
+          showNotification('All items cleared!', 'success');
         });
       }
     });
@@ -326,20 +323,39 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     document.getElementById('importInput').addEventListener('change', function(event) {
       let file = event.target.files[0];
       let reader = new FileReader();
+      
       reader.onload = function(e) {
         try {
-          let importedItems = JSON.parse(e.target.result);
+          const content = e.target.result.trim();
+          const lines = content.split('\n\n');
+          
+          const importedItems = lines.map(line => {
+            const parts = line.split('\n');
+            const title = parts[0] ? parts[0].trim() : '';
+            const url = parts[1] ? parts[1].trim() : '';
+            const tags = parts[2] ? parts[2].split(',').map(tag => tag.trim()) : [];
+
+            return {
+              title: title,
+              url: url,
+              tags: tags,
+              pinned: false
+            };
+          }).filter(item => item.title && item.url);
+
           chrome.storage.local.get('savedItems', function(data) {
             let savedItems = data.savedItems || [];
             savedItems = savedItems.concat(importedItems);
             chrome.storage.local.set({'savedItems': savedItems}, function() {
               displaySavedList(savedItems);
+              showNotification('Items imported successfully!', 'success');
             });
           });
         } catch (error) {
-          alert('Error importing file. Please make sure it\'s a valid JSON file.');
+          alert('Error importing file. Please make sure it\'s a valid text file.');
         }
       };
+      
       reader.readAsText(file);
     });
   

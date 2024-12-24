@@ -410,3 +410,37 @@ a:hover {
 .delete-button {
   cursor: pointer !important;
 }
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(204, 85, 0, 0.5); /* Theme color with transparency */
+  z-index: 999; /* Ensure it's above other elements */
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  transform: translateX(120%);
+  animation: slideIn 0.3s forwards;
+  z-index: 1000; /* Ensure it's on top */
+}
+
+.notification.success {
+  background-color: #CC5500; /* Theme color for success */
+}
+
+.notification.error {
+  background-color: #F44336; /* Red for error */
+}
+
+@keyframes slideIn {
+  to { transform: translateX(0); }
+}
