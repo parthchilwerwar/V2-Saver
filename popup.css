@@ -137,9 +137,9 @@ button:active, .import-label:active {
   background-color: #CC5500;
   border-radius: 3px;
   animation: insertIndicator 0.3s ease-in-out;
-}
+} 
 
-@keyframes insertIndicator {
+ @keyframes insertIndicator {
   from {
     transform: scaleX(0);
     opacity: 0;
@@ -201,7 +201,7 @@ button:active, .import-label:active {
 }
 
 /* Hover state for drop zones */
-#savedList li.drag-over-top::before {
+ #savedList li.drag-over-top::before {
   top: -2px;
   animation: glowTop 1s ease-in-out infinite;
 }
@@ -227,7 +227,7 @@ button:active, .import-label:active {
   50% {
     box-shadow: 0 2px 12px rgba(204, 85, 0, 0.5);
   }
-}
+} 
 
 #savedList li.placeholder {
   background-color: #FFF5E6;
@@ -242,7 +242,7 @@ button:active, .import-label:active {
 #savedList li:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(204, 85, 0, 0.3);
-}
+} 
 
 /* Mobile optimization */
 @media (max-width: 768px) {
