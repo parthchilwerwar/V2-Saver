@@ -64,16 +64,24 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 
   function displaySavedList(savedItems) {
     const savedList = document.getElementById('savedList');
+    if (!savedList) {
+        console.error('savedList element not found');
+        return;
+    }
     savedList.innerHTML = '';
 
-    if (!savedItems || savedItems.length === 0) {
-      let emptyMessage = document.createElement('p');
-      emptyMessage.textContent = 'Nothing saved yet :)';
-      savedList.appendChild(emptyMessage);
-      return;
+    if (!Array.isArray(savedItems) || savedItems.length === 0) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.textContent = 'Nothing saved yet :)';
+        savedList.appendChild(emptyMessage);
+        return;
     }
 
-    savedItems.sort((a, b) => (a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1));
+    // Sort items: pinned first, then by title
+    savedItems.sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return a.title.localeCompare(b.title);
+    });
 
     savedItems.forEach((item, index) => {
       let listItem = document.createElement('li');
@@ -132,18 +140,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         const itemIndex = parseInt(listItem.getAttribute('data-index'));
         
         if (confirm('Are you sure you want to delete this item?')) {
-          chrome.storage.local.get('savedItems', function(data) {
-            let currentItems = [...data.savedItems];
-            currentItems = currentItems.filter((_, idx) => idx !== itemIndex);
-            
-            chrome.storage.local.set({ 'savedItems': currentItems }, function() {
-              if (chrome.runtime.lastError) {
-                console.error('Error deleting:', chrome.runtime.lastError);
-                alert('Error deleting item. Please try again.');
-              } else {
-                displaySavedList(currentItems);
-              }
-            });
+          deleteItem(itemIndex).then(updatedItems => {
+            displaySavedList(updatedItems);
+          }).catch(error => {
+            console.error('Error deleting item:', error);
+            showNotification('Error deleting item. Please try again.', 'error');
           });
         }
       });
@@ -256,26 +257,37 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     if (!draggedItem || draggedItem === this) return;
     
     const fromIndex = parseInt(draggedItem.dataset.index);
-    const toIndex = Array.from(document.querySelectorAll('#savedList li:not(.dragging)')).indexOf(this);
+    const toIndex = parseInt(this.dataset.index);
     
-    chrome.storage.local.get('savedItems', function(data) {
-      let items = data.savedItems || [];
-      const itemToMove = items.splice(fromIndex, 1)[0];
-      const adjustedToIndex = toIndex > fromIndex ? toIndex : toIndex;
-      items.splice(adjustedToIndex, 0, itemToMove);
-      
-      chrome.storage.local.set({ 'savedItems': items }, function() {
-        if (chrome.runtime.lastError) {
-          console.error('Error reordering items:', chrome.runtime.lastError);
-        } else {
-          displaySavedList(items);
-          const movedItem = document.querySelector(`#savedList li:nth-child(${adjustedToIndex + 1})`);
-          if (movedItem) {
-            movedItem.classList.add('dropped');
-            setTimeout(() => movedItem.classList.remove('dropped'), 500);
-          }
+    if (isNaN(fromIndex) || isNaN(toIndex)) {
+        console.error('Invalid indices during drag and drop');
+        return;
+    }
+
+    chrome.storage.local.get('savedItems', async function(data) {
+        try {
+            let items = Array.isArray(data.savedItems) ? data.savedItems : [];
+            const [itemToMove] = items.splice(fromIndex, 1);
+            const adjustedToIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
+            items.splice(adjustedToIndex, 0, itemToMove);
+            
+            await new Promise((resolve, reject) => {
+                chrome.storage.local.set({ 'savedItems': items }, function() {
+                    if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+                    else resolve();
+                });
+            });
+
+            displaySavedList(items);
+            const movedItem = document.querySelector(`#savedList li[data-index="${adjustedToIndex}"]`);
+            if (movedItem) {
+                movedItem.classList.add('dropped');
+                setTimeout(() => movedItem.classList.remove('dropped'), 500);
+            }
+        } catch (error) {
+            console.error('Error during drag and drop:', error);
+            showNotification('Failed to reorder items', 'error');
         }
-      });
     });
   }
 
@@ -287,14 +299,28 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
   }
 
   function filterItems(query) {
+    if (typeof query !== 'string') {
+        console.error('Invalid query type');
+        return;
+    }
+
+    query = query.toLowerCase().trim();
+    
     chrome.storage.local.get('savedItems', function(data) {
-      let savedItems = data.savedItems || [];
-      let filteredItems = savedItems.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.url.toLowerCase().includes(query.toLowerCase()) ||
-        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
-      );
-      displaySavedList(filteredItems);
+        try {
+            const savedItems = Array.isArray(data.savedItems) ? data.savedItems : [];
+            const filteredItems = savedItems.filter(item => 
+                (item.title && item.title.toLowerCase().includes(query)) ||
+                (item.url && item.url.toLowerCase().includes(query)) ||
+                (Array.isArray(item.tags) && item.tags.some(tag => 
+                    tag && tag.toLowerCase().includes(query)
+                ))
+            );
+            displaySavedList(filteredItems);
+        } catch (error) {
+            console.error('Error filtering items:', error);
+            showNotification('Error filtering items', 'error');
+        }
     });
   }
 
@@ -393,16 +419,53 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     reader.readAsText(file);
   });
 
-  function showNotification(message, type) {
+  function showNotification(message, type = 'info') {
+    if (!message) return;
+    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
+    
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
     document.body.appendChild(notification);
     
     setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s forwards';
-      setTimeout(() => document.body.removeChild(notification), 300);
+        notification.style.animation = 'slideOut 0.3s forwards';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
     }, 3000);
+  }
+
+  function deleteItem(index) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get('savedItems', function(data) {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+                return;
+            }
+
+            const currentItems = Array.isArray(data.savedItems) ? data.savedItems : [];
+            if (index < 0 || index >= currentItems.length) {
+                reject(new Error('Invalid item index'));
+                return;
+            }
+
+            const updatedItems = currentItems.filter((_, idx) => idx !== index);
+            
+            chrome.storage.local.set({ 'savedItems': updatedItems }, function() {
+                if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                    return;
+                }
+                resolve(updatedItems);
+            });
+        });
+    });
   }
 
   document.getElementById('itemTitle').value = currentTitle;
