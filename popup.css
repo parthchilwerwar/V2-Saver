@@ -444,3 +444,53 @@ a:hover {
 @keyframes slideIn {
   to { transform: translateX(0); }
 }
+
+/* Undo Button Styles */
+#undoButton {
+  background-color: #CC5500;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 5px;
+  transition: 0.4s;
+  font-family: main;
+  display: inline-block;
+  position: relative;
+}
+
+#undoButton:not(:disabled):hover {
+  opacity: 0.9;
+  box-shadow: 7px 5px 56px -14px #CC5500;
+}
+
+#undoButton:not(:disabled):active {
+  transform: scale(0.97);
+  box-shadow: 7px 5px 56px -10px #CC5500;
+}
+
+#undoButton:disabled {
+  background-color: #ccc;
+  color: #888;
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+#undoButton:disabled:hover {
+  opacity: 0.5;
+  box-shadow: none;
+  transform: none;
+}
+
+@keyframes slideOut {
+  from { 
+    transform: translateX(0); 
+    opacity: 1;
+  }
+  to { 
+    transform: translateX(120%); 
+    opacity: 0;
+  }
+}

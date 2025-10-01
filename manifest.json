@@ -1,13 +1,14 @@
 {
     "manifest_version": 3,
     "name": "V2 Saver",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Effortlessly save and organize web content with tags, descriptions, and quick actions.",
     "permissions": [
         "activeTab",
         "storage",
         "tabs",
-        "clipboardWrite"
+        "clipboardWrite",
+        "notifications"
     ],
     "host_permissions": [
         "<all_urls>"
