@@ -1,4 +1,3 @@
-// Consolidated onInstalled listener
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
       console.log('Thank you for installing V2 Saver!');
@@ -6,7 +5,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       console.log('V2 Saver has been updated to version ' + chrome.runtime.getManifest().version);
     }
     
-    // Create context menu
     chrome.contextMenus.create({
       id: 'saveToV2',
       title: 'Save to V2 Saver',
@@ -62,7 +60,7 @@ chrome.runtime.onInstalled.addListener((details) => {
           });
         });
       });
-      return true; 
+      return true;
     }
   });
   

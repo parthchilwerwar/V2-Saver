@@ -2,7 +2,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
   let currentURL = tabs[0].url;
   let currentTitle = tabs[0].title;
 
-  // Undo System
   const MAX_UNDO_HISTORY = 20;
   let undoHistory = [];
   
@@ -26,7 +25,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     
     undoHistory.push(undoEntry);
     
-    // Limit history size
     if (undoHistory.length > MAX_UNDO_HISTORY) {
       undoHistory.shift();
     }
@@ -48,7 +46,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (chrome.runtime.lastError) {
         console.error('Error during undo:', chrome.runtime.lastError);
         showNotification('Undo failed!', 'error');
-        undoHistory.push(lastAction); // Restore to history on failure
+        undoHistory.push(lastAction);
       } else {
         displaySavedList(lastAction.previousState);
         showNotification(`Undone: ${lastAction.description || lastAction.action}`, 'success');
@@ -57,12 +55,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     });
   }
   
-  // Undo button click handler
   document.getElementById('undoButton').addEventListener('click', function() {
     performUndo();
   });
   
-  // Keyboard shortcut for undo (Ctrl+Z or Cmd+Z)
   document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
@@ -89,7 +85,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       let savedItems = data.savedItems || [];
       let editIndex = document.getElementById('saveButton').dataset.editIndex;
       
-      // Save state for undo BEFORE making changes
       const previousState = JSON.parse(JSON.stringify(savedItems));
       
       if (editIndex !== undefined) {
@@ -126,7 +121,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.storage.local.set({ 'savedItems': savedItems }, function () {
         console.log('Item has been saved/updated :) ');
         
-        // Save to undo history
         const actionDescription = editIndex !== undefined 
           ? `Edit "${itemTitle}"` 
           : `Add "${itemTitle}"`;
@@ -155,8 +149,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         return;
     }
 
-    // Display items in their current order
-    // Pinned items appear first, then unpinned items
     savedItems.forEach((item, index) => {
       let listItem = document.createElement('li');
       listItem.draggable = true;
@@ -238,7 +230,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.storage.local.get('savedItems', function(data) {
           let items = data.savedItems || [];
           
-          // Save state for undo BEFORE pinning/unpinning
           const previousState = JSON.parse(JSON.stringify(items));
           
           const itemIndex = items.findIndex(i => i.title === item.title && i.url === item.url);
@@ -247,14 +238,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
             const isPinned = items[itemIndex].pinned;
             items[itemIndex].pinned = !isPinned;
             
-            // When pinning, move to top of pinned items
-            // When unpinning, move to top of unpinned items
             if (!isPinned) {
-              // Pinning: move to start of array
               const [pinnedItem] = items.splice(itemIndex, 1);
               items.unshift(pinnedItem);
             } else {
-              // Unpinning: move to after last pinned item
               const [unpinnedItem] = items.splice(itemIndex, 1);
               const lastPinnedIndex = items.findIndex(i => !i.pinned);
               if (lastPinnedIndex === -1) {
@@ -265,7 +252,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
             }
             
             chrome.storage.local.set({ 'savedItems': items }, () => {
-              // Save to undo history after successful pin/unpin
               const actionDescription = isPinned ? `Unpin "${item.title}"` : `Pin "${item.title}"`;
               saveStateForUndo(isPinned ? 'unpin' : 'pin', previousState, actionDescription);
               
@@ -318,15 +304,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const midY = rect.top + rect.height / 2;
     const isAbove = e.clientY < midY;
     
-    // Clear previous indicators
     document.querySelectorAll('#savedList li').forEach(item => {
       item.classList.remove('drag-over-top', 'drag-over-bottom');
     });
     
-    // Add visual drop zone indicator
     this.classList.add(isAbove ? 'drag-over-top' : 'drag-over-bottom');
     
-    // Move the dragged item in the DOM for real-time visual feedback
     const parent = this.parentNode;
     if (isAbove) {
       parent.insertBefore(draggedItem, this);
@@ -334,7 +317,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       parent.insertBefore(draggedItem, this.nextSibling);
     }
     
-    // Update dataset indices after DOM reordering for accurate tracking
     const allItems = Array.from(parent.children);
     allItems.forEach((item, index) => {
       item.dataset.currentPosition = index;
@@ -365,7 +347,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const listItems = Array.from(document.querySelectorAll('#savedList li'));
     const newOrder = listItems.map(item => parseInt(item.dataset.index));
     
-    // Check if order actually changed
     const originalOrder = listItems.map((item, index) => index);
     const orderChanged = !newOrder.every((val, idx) => val === originalOrder[idx]);
     
@@ -374,15 +355,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       return;
     }
     
-    // Get the original saved items
     chrome.storage.local.get('savedItems', function(data) {
         try {
             let items = Array.isArray(data.savedItems) ? [...data.savedItems] : [];
             
-            // Save state for undo BEFORE reordering
             const previousState = JSON.parse(JSON.stringify(items));
             
-            // Reorder items based on the new DOM order using original indices
             const reorderedItems = newOrder.map(originalIndex => {
               if (originalIndex >= 0 && originalIndex < items.length) {
                 return items[originalIndex];
@@ -390,7 +368,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
               return null;
             }).filter(item => item !== null);
             
-            // Validate we didn't lose any items
             if (reorderedItems.length !== items.length) {
               console.error('Item count mismatch after reordering');
               showNotification('Reordering failed - item count mismatch', 'error');
@@ -398,23 +375,19 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
               return;
             }
             
-            // Save the reordered array
             chrome.storage.local.set({ 'savedItems': reorderedItems }, function() {
                 if (chrome.runtime.lastError) {
                     console.error('Error saving reordered items:', chrome.runtime.lastError);
                     showNotification('Failed to save new order', 'error');
-                    displaySavedList(items); // Restore original display
+                    displaySavedList(items);
                 } else {
                     console.log('Items reordered successfully');
                     console.log('New order:', reorderedItems.map(item => item.title));
                     
-                    // Save to undo history after successful reorder
                     saveStateForUndo('reorder', previousState, 'Reorder items');
                     
-                    // Refresh display with new order
                     displaySavedList(reorderedItems);
                     
-                    // Visual feedback - find the dragged item in new position
                     setTimeout(() => {
                       const newIndex = newOrder.indexOf(draggedIndex);
                       if (newIndex >= 0) {
@@ -480,13 +453,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
   document.getElementById('clearAllButton').addEventListener('click', function() {
     if (confirm('Are you sure you want to clear all saved items?')) {
       chrome.storage.local.get('savedItems', function(data) {
-        // Save state for undo BEFORE clearing
         const previousState = data.savedItems || [];
         
         chrome.storage.local.set({'savedItems': []}, function() {
           console.log('Saved list has been cleared :)');
           
-          // Save to undo history after successful clear
           saveStateForUndo('clear', previousState, `Clear all (${previousState.length} items)`);
           
           displaySavedList([]);
@@ -526,13 +497,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         return;
       }
       
-      // Create header with metadata
       let header = `V2 Saver Export\n`;
       header += `Export Date: ${new Date().toLocaleString()}\n`;
       header += `Total Items: ${savedItems.length}\n`;
       header += `${'='.repeat(50)}\n\n`;
       
-      // Format each item with clear separators
       let content = savedItems.map((item, index) => {
         let itemText = `Item ${index + 1}:\n`;
         itemText += `Title: ${item.title}\n`;
@@ -589,16 +558,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           return;
         }
         
-        // Ask user if they want to merge or replace
         chrome.storage.local.get('savedItems', function(data) {
           let savedItems = data.savedItems || [];
           
           if (savedItems.length > 0) {
             if (confirm(`You have ${savedItems.length} existing items. Do you want to ADD ${importedItems.length} imported items?\n\nClick OK to add, or Cancel to replace all items.`)) {
-              // Merge: Add imported items to existing
               savedItems = savedItems.concat(importedItems);
             } else {
-              // Replace: Use only imported items
               savedItems = importedItems;
             }
           } else {
@@ -608,7 +574,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           chrome.storage.local.set({'savedItems': savedItems}, function() {
             displaySavedList(savedItems);
             showNotification(`Successfully imported ${importedItems.length} items!`, 'success');
-            // Reset the file input
             event.target.value = '';
           });
         });
@@ -632,7 +597,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     notification.className = `notification ${type}`;
     notification.textContent = message;
     
-    // Remove existing notifications
     document.querySelectorAll('.notification').forEach(n => n.remove());
     
     document.body.appendChild(notification);
@@ -657,7 +621,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 
             const currentItems = Array.isArray(data.savedItems) ? data.savedItems : [];
             
-            // Save state for undo BEFORE deleting
             const previousState = JSON.parse(JSON.stringify(currentItems));
             
             const updatedItems = currentItems.filter(item => !(item.title === title && item.url === url));
@@ -673,7 +636,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                     return;
                 }
                 
-                // Save to undo history after successful delete
                 saveStateForUndo('delete', previousState, `Delete "${title}"`);
                 
                 showNotification('Item deleted successfully!', 'success');
@@ -683,11 +645,9 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     });
   }
 
-  // Parse import file function
   function parseImportFile(content) {
     const items = [];
     
-    // Split by item separators
     const itemBlocks = content.split(/[-]{50,}/);
     
     itemBlocks.forEach(block => {
@@ -701,7 +661,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       lines.forEach(line => {
         const trimmedLine = line.trim();
         
-        // Skip header lines and empty lines
         if (trimmedLine.startsWith('V2 Saver Export') || 
             trimmedLine.startsWith('Export Date:') || 
             trimmedLine.startsWith('Total Items:') || 
@@ -710,7 +669,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
           return;
         }
         
-        // Parse each field
         if (trimmedLine.startsWith('Title:')) {
           title = trimmedLine.substring(6).trim();
         } else if (trimmedLine.startsWith('URL:')) {
@@ -725,9 +683,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         }
       });
       
-      // Validate and add item
       if (title && url) {
-        // Ensure URL has protocol
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
           url = 'https://' + url;
         }
